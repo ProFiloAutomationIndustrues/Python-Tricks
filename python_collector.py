@@ -15,7 +15,7 @@ flowers_list.remove("globe thistle")
 
 #add items
 flowers_list.append("snapdragon")
-
+mylist1.index(min(mylist1)) #get minimum of a list and its position in the list
 
 print("Validation MAE: {:,.0f}".format(val_mae))
 print("Max leaf nodes: %d  \t\t Mean Absolute Error:  %d" %(max_leaf_nodes, my_mae))
