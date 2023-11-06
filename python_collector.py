@@ -19,3 +19,6 @@ mylist1.index(min(mylist1)) #get minimum of a list and its position in the list
 
 print("Validation MAE: {:,.0f}".format(val_mae))
 print("Max leaf nodes: %d  \t\t Mean Absolute Error:  %d" %(max_leaf_nodes, my_mae))
+
+# formattazione di numero con la virgola
+print("Min mae: {:.2f}".format(min(mae_list))) --> 27282.50803885739->27282.51
