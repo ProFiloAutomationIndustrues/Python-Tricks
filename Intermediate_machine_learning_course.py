@@ -182,5 +182,20 @@ def score_dataset(X_train, X_valid, y_train, y_valid):
     preds = model.predict(X_valid)
     return mean_absolute_error(y_valid, preds)
 
+# Step 2: Drop columns with missing values
+# Fill in the line below: get names of columns with missing values
+series_names_cols_with_missing_values = missing_val_count_by_column[missing_val_count_by_column > 0]
+print(series_names_cols_with_missing_values) 
+
+cols_with_missing = [col for col in X_train.columns
+                     if X_train[col].isnull().any()]
+
+# Fill in the lines below: drop columns in training and validation data
+reduced_X_train = X_train.drop(cols_with_missing, axis=1)
+reduced_X_valid = X_valid.drop(cols_with_missing, axis=1)
+
+# Step 3: imputation
+
+
 
 
