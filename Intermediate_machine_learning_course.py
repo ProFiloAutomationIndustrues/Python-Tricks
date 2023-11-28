@@ -114,7 +114,7 @@ imputed_X_valid_plus.columns = X_valid_plus.columns
 print("MAE from Approach 3 (An Extension to Imputation):")
 print(score_dataset(imputed_X_train_plus, imputed_X_valid_plus, y_train, y_valid))
 
-# EXERCISE MISSING VALUES
+#### EXERCISE MISSING VALUES
 # Set up code checking
 import os
 if not os.path.exists("../input/train.csv"):
@@ -146,6 +146,7 @@ X_test = X_test_full.select_dtypes(exclude=['object'])
 X_train, X_valid, y_train, y_valid = train_test_split(X, y, train_size=0.8, test_size=0.2, random_state=0)
 X_train.head()
 
+## STEP1: PRELIMINARY INVESTIGATION
 # Shape of training data (num_rows, num_columns)
 print(X_train.shape)
 
@@ -153,6 +154,7 @@ print(X_train.shape)
 missing_val_count_by_column = (X_train.isnull().sum())
 print(missing_val_count_by_column[missing_val_count_by_column > 0])
 
+## PART A
 # Fill in the line below: How many rows are in the training data?
 num_rows = X_train.shape[0] 
 print("Num rows: %d" %(num_rows))
@@ -167,6 +169,7 @@ print("Num cols with missing: %d" %(len(num_cols_with_missing)))
 tot_missing = int(num_cols_with_missing.sum())
 print("Total missing elements: %d" %(tot_missing))
 
+## PART B
 #Since there are relatively few missing entries in the data (the column with the greatest percentage of missing values is missing less than 20% of its entries), 
 #we can expect that dropping columns is unlikely to yield good results. This is because we'd be throwing away a lot of valuable data, and so imputation will likely perform better.
 
@@ -182,7 +185,7 @@ def score_dataset(X_train, X_valid, y_train, y_valid):
     preds = model.predict(X_valid)
     return mean_absolute_error(y_valid, preds)
 
-# Step 2: Drop columns with missing values
+### Step 2: Drop columns with missing values
 # Fill in the line below: get names of columns with missing values
 series_names_cols_with_missing_values = missing_val_count_by_column[missing_val_count_by_column > 0]
 print(series_names_cols_with_missing_values) 
@@ -194,8 +197,78 @@ cols_with_missing = [col for col in X_train.columns
 reduced_X_train = X_train.drop(cols_with_missing, axis=1)
 reduced_X_valid = X_valid.drop(cols_with_missing, axis=1)
 
-# Step 3: imputation
+Ora vediamo come è il MAE nel caso del dropping delle colonne
+print("MAE (Drop columns with missing values):")
+print(score_dataset(reduced_X_train, reduced_X_valid, y_train, y_valid))
 
+### Step 3: Imputation
+## PART A
+from sklearn.impute import SimpleImputer
+
+# Fill in the lines below: imputation
+my_imputer = SimpleImputer() # Your code here
+imputed_X_train = pd.DataFrame(my_imputer.fit_transform(X_train)) # this first fits the training data
+imputed_X_valid = pd.DataFrame(my_imputer.transform(X_valid)) #then in transforms the validation data
+
+# Fill in the lines below: imputation removed column names; put them back
+imputed_X_train.columns = X_train.columns
+imputed_X_valid.columns = X_valid.columns
+
+print("MAE (Imputation):")
+print(score_dataset(imputed_X_train, imputed_X_valid, y_train, y_valid))
+In realtà ora mae è 18000 contro 17000 di prima.
+
+## PART B
+Given that thre are so few missing values in the dataset, we'd expect imputation to perform better than dropping 
+columns entirely. However, we see that dropping columns performs slightly better! While this can probably partially 
+be attributed to noise in the dataset, another potential explanation is that the imputation method is not a great match 
+to this dataset. That is, maybe instead of filling in the mean value, it makes more sense to set every missing value to 
+a value of 0, to fill in the most frequently encountered value, or to use some other method. For instance, consider the 
+GarageYrBlt column (which indicates the year that the garage was built). It's likely that in some cases, a missing value 
+could indicate a house that does not have a garage. Does it make more sense to fill in the median value along each column 
+in this case? Or could we get better results by filling in the minimum value along each column? It's not quite clear 
+what's best in this case, but perhaps we can rule out some options immediately - for instance, setting missing values 
+in this column to 0 is likely to yield horrible results!
+
+### Step 4: Generate test predictions
+## PART A
+# Preprocessed training and validation features
+# scelgo strada di imputation con mediana per i missing values
+final_imputer = SimpleImputer(strategy = 'median')
+final_X_train = pd.DataFrame(final_imputer.fit_transform(X_train))
+final_X_valid = pd.DataFrame(final_imputer.transform(X_valid))
+
+# Imputation removed column names; put them back
+final_X_train.columns = X_train.columns
+final_X_valid.columns = X_valid.columns
+
+# Define and fit model
+model = RandomForestRegressor(n_estimators=100, random_state=0)
+model.fit(final_X_train, y_train)
+
+# Get validation predictions and MAE
+preds_valid = model.predict(final_X_valid)
+print("MAE (Your approach):")
+print(mean_absolute_error(y_valid, preds_valid))
+
+Con la nostra predizione:
+MAE (Your approach):
+17791.59899543379 (questo è l'errore che otteniamo durante la validazione del modello. 
+                  I dati di validazione sono una parte di trainiing, perché abbiamo label)
+
+## PART B
+Ora prendiamo i dati di test, per cui non ho le label. Facciamo la vera e propria predizione.
+# Fill in the line below: preprocess test data
+final_X_test = pd.DataFrame(final_imputer.transform(X_test))
+
+final_X_test.columns = X_test.columns
+
+# Fill in the line below: get test predictions
+preds_test = model.predict(final_X_test)
+# Save test predictions to file
+output = pd.DataFrame({'Id': X_test.index,
+                       'SalePrice': preds_test})
+output.to_csv('submission.csv', index=False)
 
 
 
